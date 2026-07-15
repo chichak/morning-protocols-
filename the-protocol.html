@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Protocol — Daily Operating System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121417;
+    --surface:#1B1E24;
+    --surface-2:#20242C;
+    --line:#2B303A;
+    --chalk:#EDEAE3;
+    --dim:#8E939D;
+    --accent:#FFC53D;
+    --accent-ink:#121417;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important;}
+    html{scroll-behavior:auto;}
+  }
+  body{
+    background:var(--bg);
+    color:var(--chalk);
+    font-family:'Barlow',sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px 96px;}
+
+  /* ---------- header ---------- */
+  header{
+    padding:56px 0 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .kicker{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.18em;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;
+    font-size:clamp(56px,11vw,104px);
+    line-height:.92;
+    text-transform:uppercase;
+    letter-spacing:.01em;
+    margin:10px 0 18px;
+  }
+  h1 .thin{color:var(--dim);}
+  .creed{
+    max-width:520px;
+    color:var(--dim);
+    font-size:17px;
+    margin-bottom:28px;
+  }
+  .creed strong{color:var(--chalk);font-weight:600;}
+
+  /* progress bar */
+  .progress{
+    display:flex;align-items:center;gap:14px;
+    padding:18px 0 22px;
+  }
+  .bar{
+    flex:1;height:6px;background:var(--surface-2);
+    border-radius:3px;overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;width:0%;
+    background:var(--accent);
+    border-radius:3px;
+    transition:width .35s ease;
+  }
+  .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;color:var(--dim);
+    white-space:nowrap;
+  }
+  .count b{color:var(--accent);font-weight:600;}
+
+  /* ---------- phases ---------- */
+  .phase{margin-top:52px;}
+  .phase-head{
+    display:flex;align-items:baseline;gap:14px;
+    margin-bottom:6px;
+  }
+  .phase-title{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;font-size:32px;
+    text-transform:uppercase;letter-spacing:.03em;
+  }
+  .phase-time{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;letter-spacing:.14em;
+    color:var(--accent);text-transform:uppercase;
+  }
+  .phase-sub{color:var(--dim);font-size:15px;margin-bottom:20px;max-width:560px;}
+
+  /* ---------- cards ---------- */
+  .cards{display:grid;gap:14px;}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--line);
+    border-radius:10px;
+    padding:22px 22px 20px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:6px 18px;
+    transition:border-color .25s ease, opacity .25s ease, background .25s ease;
+  }
+  .card.done{
+    border-left-color:var(--accent);
+    background:var(--surface-2);
+  }
+  .card.done .card-title{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--accent);text-decoration-thickness:2px;}
+  .card-title{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;font-size:24px;
+    text-transform:uppercase;letter-spacing:.02em;
+    grid-column:1;
+  }
+  .card-do{grid-column:1;font-size:15.5px;color:var(--chalk);}
+  .card-why{
+    grid-column:1;font-size:13.5px;color:var(--dim);
+    margin-top:8px;padding-top:10px;border-top:1px dashed var(--line);
+  }
+  .card-why::before{
+    content:"WHY";
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;letter-spacing:.18em;color:var(--accent);
+    display:block;margin-bottom:3px;
+  }
+  .card-action{
+    grid-column:2;grid-row:1 / span 3;
+    align-self:start;
+  }
+
+  button.check{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;
+    background:transparent;
+    color:var(--dim);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px 14px;
+    cursor:pointer;
+    transition:all .2s ease;
+    white-space:nowrap;
+  }
+  button.check:hover{border-color:var(--accent);color:var(--accent);}
+  button.check:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .card.done button.check{
+    background:var(--accent);
+    color:var(--accent-ink);
+    border-color:var(--accent);
+    font-weight:600;
+  }
+
+  /* rep counter card */
+  .rep-controls{
+    display:flex;flex-direction:column;gap:8px;align-items:stretch;
+  }
+  .rep-count{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;font-size:44px;line-height:1;
+    color:var(--accent);text-align:center;
+  }
+  .rep-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;letter-spacing:.16em;color:var(--dim);
+    text-align:center;text-transform:uppercase;
+  }
+  button.rep{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;letter-spacing:.08em;
+    background:var(--accent);
+    color:var(--accent-ink);
+    border:none;border-radius:6px;
+    padding:11px 16px;font-weight:600;
+    cursor:pointer;
+    transition:transform .12s ease, filter .2s ease;
+    white-space:nowrap;
+  }
+  button.rep:hover{filter:brightness(1.08);}
+  button.rep:active{transform:scale(.96);}
+  button.rep:focus-visible{outline:2px solid var(--chalk);outline-offset:2px;}
+
+  .steps{
+    grid-column:1;
+    margin-top:10px;
+    display:grid;gap:6px;
+  }
+  .step{
+    display:flex;gap:10px;align-items:baseline;
+    font-size:14.5px;
+  }
+  .step-n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:var(--accent);
+    min-width:16px;
+  }
+
+  /* stance card input */
+  .stance-input{
+    grid-column:1;
+    margin-top:10px;
+    display:flex;gap:8px;flex-wrap:wrap;
+  }
+  .stance-input input{
+    flex:1;min-width:220px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--chalk);
+    font-family:'Barlow',sans-serif;
+    font-size:15px;
+    padding:10px 12px;
+  }
+  .stance-input input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .stance-display{
+    grid-column:1;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:26px;font-weight:600;
+    color:var(--accent);
+    text-transform:uppercase;
+    margin-top:8px;
+    display:none;
+  }
+
+  /* footer / evolution */
+  .evolve{
+    margin-top:64px;
+    border:1px dashed var(--line);
+    border-radius:10px;
+    padding:24px;
+    color:var(--dim);
+    font-size:14.5px;
+  }
+  .evolve b{color:var(--chalk);}
+  .evolve .kicker{display:block;margin-bottom:8px;}
+
+  .allclear{
+    display:none;
+    margin-top:40px;
+    text-align:center;
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;
+    font-size:clamp(34px,7vw,56px);
+    text-transform:uppercase;
+    color:var(--accent);
+    letter-spacing:.02em;
+  }
+  .allclear.show{display:block;animation:pop .4s ease;}
+  @keyframes pop{from{transform:scale(.92);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+  @media(max-width:560px){
+    .card{grid-template-columns:1fr;}
+    .card-action{grid-column:1;grid-row:auto;margin-top:12px;}
+    .rep-controls{flex-direction:row;align-items:center;justify-content:space-between;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="kicker">Daily operating system · v1</span>
+    <h1>The<br>Proto<span class="thin">col</span></h1>
+    <p class="creed"><strong>You are not your mind. You are the one training it.</strong> The mind proposes; you decide what drives. Every card below is one rep of that decision. Reset each morning. No logs, no rearview — the proof lives in the doing.</p>
+    <div class="progress" role="status" aria-live="polite">
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+      <span class="count"><b id="doneCount">0</b>/<span id="totalCount">8</span> reps</span>
+    </div>
+  </header>
+
+  <!-- ================= MORNING ================= -->
+  <section class="phase">
+    <div class="phase-head">
+      <h2 class="phase-title">Morning</h2>
+      <span class="phase-time">First 60 min</span>
+    </div>
+    <p class="phase-sub">You're not starting the day. You're setting the algorithm's operating parameters before the world sets them for you.</p>
+    <div class="cards">
+
+      <article class="card" data-card>
+        <h3 class="card-title">Body before mind</h3>
+        <p class="card-do">Real physical exertion — strength, sprints, hard conditioning. Not a stretch. Actual training, before anything else.</p>
+        <p class="card-why">Discharges the stress chemistry that would leak into every decision today, and gives you your first proof-of-execution before the world offers an excuse. A body that has done hard things doesn't negotiate with easy resistance.</p>
+        <div class="card-action"><button class="check" data-check>Mark done</button></div>
+      </article>
+
+      <article class="card" data-card>
+        <h3 class="card-title">No phone, first hour</h3>
+        <p class="card-do">Attention touches your agenda first — not notifications, not feeds, not other people's urgency.</p>
+        <p class="card-why">The first thing your attention lands on trains what your brain treats as urgent for the rest of the day. Feed it your priorities or it will run on everyone else's.</p>
+        <div class="card-action"><button class="check" data-check>Mark done</button></div>
+      </article>
+
+      <article class="card" data-card id="stanceCard">
+        <h3 class="card-title">Decide today's stance</h3>
+        <p class="card-do">Say your standard for the day out loud, once, with conviction. Not an affirmation — a decision. Keep the same line for at least a week.</p>
+        <div class="stance-input" id="stanceInput">
+          <input type="text" id="stanceText" placeholder='e.g. "Effort is not optional. Outcome is not guaranteed. I don&#39;t need it to be."' aria-label="Your stance for today">
+        </div>
+        <p class="stance-display" id="stanceDisplay"></p>
+        <p class="card-why">The person who wins today decided who they were before the day had a chance to tell them who to be.</p>
+        <div class="card-action"><button class="check" data-check id="stanceBtn">Commit</button></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= THROUGH THE DAY ================= -->
+  <section class="phase">
+    <div class="phase-head">
+      <h2 class="phase-title">Through the day</h2>
+      <span class="phase-time">All day · live reps</span>
+    </div>
+    <p class="phase-sub">This is where the real work happens. Mindset doesn't live in the morning ritual — it lives in the seconds after a setback.</p>
+    <div class="cards">
+
+      <article class="card" data-card>
+        <h3 class="card-title">Catch the story</h3>
+        <p class="card-do">Every time a setback fires an automatic thought — "I'm not good enough," "I always mess this up" — run the sequence:</p>
+        <div class="steps">
+          <div class="step"><span class="step-n">1</span><span>Notice the thought arose.</span></div>
+          <div class="step"><span class="step-n">2</span><span>Label it: "That's the old pattern talking, not a fact."</span></div>
+          <div class="step"><span class="step-n">3</span><span>Ask: "What does this moment actually require of me right now?"</span></div>
+        </div>
+        <p class="card-why">You can't stop the thought from arising. You can stop it from being the last word. Mental toughness isn't immunity to setbacks — it's recovery speed. Count every catch below; each one is a rep.</p>
+        <div class="card-action">
+          <div class="rep-controls">
+            <div>
+              <div class="rep-count" id="repCount">0</div>
+              <div class="rep-label">catches</div>
+            </div>
+            <button class="rep" id="repBtn">+1 rep</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-card>
+        <h3 class="card-title">Match task to energy</h3>
+        <p class="card-do">Hardest cognitive or physical work goes in your peak window (usually within 4–6 hours of waking). Admin and low-stakes work goes in the dip.</p>
+        <p class="card-why">Willpower runs out when you fight your own biology all day. Working with it is why some people seem to have endless drive.</p>
+        <div class="card-action"><button class="check" data-check>Mark done</button></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= TRAINING ================= -->
+  <section class="phase">
+    <div class="phase-head">
+      <h2 class="phase-title">Training</h2>
+      <span class="phase-time">Session</span>
+    </div>
+    <p class="phase-sub">Training isn't just physical adaptation. It's controlled adversity on demand — the forge for everything above.</p>
+    <div class="cards">
+
+      <article class="card" data-card>
+        <h3 class="card-title">The mental rep</h3>
+        <p class="card-do">In the hardest moment of the session — when your body proposes quitting before it has to — don't distract from the discomfort. Stay present with it and choose the next rep anyway.</p>
+        <p class="card-why">That specific choice, repeated hundreds of times across months, is what builds mental toughness. The neural machinery for "push through discomfort toward a chosen outcome" doesn't know the difference between a barbell and a business problem.</p>
+        <div class="card-action"><button class="check" data-check>Mark done</button></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= NIGHT ================= -->
+  <section class="phase">
+    <div class="phase-head">
+      <h2 class="phase-title">Night</h2>
+      <span class="phase-time">Last 30 min</span>
+    </div>
+    <p class="phase-sub">This is where the architecture consolidates. Sleep is when today's patterns get written into long-term structure.</p>
+    <div class="cards">
+
+      <article class="card" data-card>
+        <h3 class="card-title">Close the loop</h3>
+        <p class="card-do">Whatever happened today — good or bad — gets one short acknowledgment: "That happened. It's done. Tomorrow starts clean." Then it doesn't get to run wild at 11pm.</p>
+        <p class="card-why">Ruminating right before sleep is saving corrupted data into long-term memory. Close the file first.</p>
+        <div class="card-action"><button class="check" data-check>Mark done</button></div>
+      </article>
+
+      <article class="card" data-card>
+        <h3 class="card-title">Protect the sleep</h3>
+        <p class="card-do">Fixed wake time, every day — it matters more than a fixed bedtime. Guard the last 30 minutes: dim, quiet, no feeds.</p>
+        <p class="card-why">The least glamorous, most decisive lever in the entire system. No one sustains elite output on erratic sleep — the research isn't close.</p>
+        <div class="card-action"><button class="check" data-check>Mark done</button></div>
+      </article>
+
+    </div>
+  </section>
+
+  <p class="allclear" id="allClear">All reps logged.<br>Now go live it.</p>
+
+  <div class="evolve">
+    <span class="kicker">Version discipline · every 4–6 weeks</span>
+    Ask one question: <b>"Where did I flinch this month — and is this practice still addressing it, or am I going through motions?"</b> If it's gone stale, increase the load: harder training, longer discomfort tolerance, bigger stakes in what you rehearse. The mind adapts to whatever load you give it. A system that never increases load stops training anything.
+  </div>
+
+</div>
+
+<script>
+  const cards = document.querySelectorAll('[data-card]');
+  const checks = document.querySelectorAll('[data-check]');
+  const barFill = document.getElementById('barFill');
+  const doneCount = document.getElementById('doneCount');
+  const totalCount = document.getElementById('totalCount');
+  const allClear = document.getElementById('allClear');
+
+  // total checkable = all cards (rep-counter card counts as done at >=1 catch)
+  const total = cards.length;
+  totalCount.textContent = total;
+
+  function updateProgress(){
+    const done = document.querySelectorAll('.card.done').length;
+    doneCount.textContent = done;
+    barFill.style.width = (done / total * 100) + '%';
+    if(done === total){ allClear.classList.add('show'); }
+    else{ allClear.classList.remove('show'); }
+  }
+
+  checks.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('[data-card]');
+
+      // stance card: require text before committing
+      if(btn.id === 'stanceBtn' && !card.classList.contains('done')){
+        const input = document.getElementById('stanceText');
+        const val = input.value.trim();
+        if(!val){ input.focus(); return; }
+        document.getElementById('stanceDisplay').textContent = '"' + val + '"';
+        document.getElementById('stanceDisplay').style.display = 'block';
+        document.getElementById('stanceInput').style.display = 'none';
+      }
+      if(btn.id === 'stanceBtn' && card.classList.contains('done')){
+        document.getElementById('stanceDisplay').style.display = 'none';
+        document.getElementById('stanceInput').style.display = 'flex';
+      }
+
+      card.classList.toggle('done');
+      btn.textContent = card.classList.contains('done')
+        ? '✓ Done'
+        : (btn.id === 'stanceBtn' ? 'Commit' : 'Mark done');
+      updateProgress();
+    });
+  });
+
+  // rep counter card
+  const repBtn = document.getElementById('repBtn');
+  const repCount = document.getElementById('repCount');
+  let reps = 0;
+  repBtn.addEventListener('click', () => {
+    reps++;
+    repCount.textContent = reps;
+    const card = repBtn.closest('[data-card]');
+    if(!card.classList.contains('done')){
+      card.classList.add('done');
+      updateProgress();
+    }
+  });
+
+  updateProgress();
+</script>
+</body>
+</html>
